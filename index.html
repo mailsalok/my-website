@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MyTutor Login</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css?v=3">
+</head>
+<body class="login-page">
+  <div class="login-container">
+    
+    <!-- Left side with background image -->
+    <div class="login-left">
+      <h1>Welcome to MyTutor 🎓</h1>
+      <p>Your personalized space for Study, News, and Entertainment.</p>
+    </div>
+
+    <!-- Right side with login box -->
+    <div class="login-right">
+      <div class="login-box">
+        <h2>Sign in Using Google</h2>
+        <p>Please log in with Google to continue:</p>
+        <button id="login-btn">Sign in with Google</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } 
+      from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyARJhReSWcQfXhTET1lVUsS9dy_eJhVtSo",
+      authDomain: "mytutor-59383.firebaseapp.com",
+      projectId: "mytutor-59383",
+      storageBucket: "mytutor-59383.appspot.com",
+      messagingSenderId: "94625775607",
+      appId: "1:94625775607:web:d06cf7e691e071404bb8f2",
+      measurementId: "G-F0GBF6QMN1"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const provider = new GoogleAuthProvider();
+
+    // Redirect if already logged in
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        window.location.href = "landing.html";
+      }
+    });
+
+    // Sign in with Google
+    const loginBtn = document.getElementById("login-btn");
+    loginBtn.addEventListener("click", () => {
+      loginBtn.disabled = true;
+      loginBtn.innerText = "Signing in...";
+      signInWithPopup(auth, provider)
+        .then(() => {
+          window.location.href = "landing.html";
+        })
+        .catch((error) => {
+          console.error(error);
+          alert("Login failed: " + error.message);
+          loginBtn.disabled = false;
+          loginBtn.innerText = "Sign in with Google";
+        });
+    });
+  </script>
+</body>
+</html>

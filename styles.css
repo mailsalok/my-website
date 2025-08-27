@@ -1,0 +1,230 @@
+/* ==========================
+   Global Styles (all pages)
+   ========================== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Roboto', sans-serif;
+  color: #333;
+  line-height: 1.6;
+
+  /* Dynamic background setup */
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+  min-height: 100vh;
+}
+
+/* Section styling */
+.section {
+  padding: 40px;
+  background: rgba(255, 255, 255, 0.85); /* translucent for contrast */
+  border-radius: 12px;
+  margin: 20px;
+}
+.section h2 {
+  margin-bottom: 20px;
+  font-size: 2rem;
+  color: #2c3e50;
+}
+
+/* ==========================
+   Navbar (shared)
+   ========================== */
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 30px;
+  background: rgba(44, 62, 80, 0.9); /* semi-transparent */
+  color: white;
+}
+.navbar a {
+  color: white;
+  text-decoration: none;
+  margin-left: 20px;
+  font-weight: 500;
+}
+.navbar a:hover {
+  text-decoration: underline;
+}
+
+/* Logout button */
+.btn-logout {
+  margin-left: 15px;
+  padding: 6px 14px;
+  border: none;
+  background: #e74c3c;
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+}
+.btn-logout:hover {
+  background: #c0392b;
+}
+
+/* ==========================
+   Big Buttons (used in Study & News)
+   ========================== */
+.button-container,
+.options-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* 2x2 layout */
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.big-button,
+.btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #3498db;
+  color: white;
+  font-size: 1.2rem;
+  padding: 20px;
+  border-radius: 12px;
+  text-decoration: none;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  transition: transform 0.2s, background 0.3s;
+  text-align: center;
+}
+.big-button:hover,
+.btn:hover {
+  background: #2980b9;
+  transform: translateY(-5px);
+}
+
+/* ==========================
+   Cards (shared if needed)
+   ========================== */
+.card-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 20px;
+}
+
+.card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  transition: transform 0.2s;
+  cursor: pointer;
+  text-align: center;
+}
+.card:hover {
+  transform: translateY(-5px);
+}
+.card h3 {
+  margin-top: 0;
+  color: #2c3e50;
+}
+
+/* ==========================
+   Login Page (scoped to .login-page only)
+   ========================== */
+body.login-page {
+  background: none !important; /* disable global bg */
+}
+
+.login-page .login-container {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* Left side */
+.login-page .login-left {
+  flex: 1;
+  background: url('images/login-bg.jpg') no-repeat center center/cover;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 40px;
+}
+.login-page .login-left h1 {
+  font-size: 2.5rem;
+  margin-bottom: 20px;
+  text-shadow: 2px 2px 6px rgba(0,0,0,0.5);
+}
+.login-page .login-left p {
+  font-size: 1.2rem;
+  max-width: 400px;
+  text-shadow: 1px 1px 4px rgba(0,0,0,0.5);
+}
+
+/* Right side */
+.login-page .login-right {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #f7f7f7;
+}
+.login-page .login-box {
+  background: white;
+  padding: 40px;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+  text-align: center;
+  width: 320px;
+  animation: fadeIn 0.8s ease-out;
+}
+.login-page .login-box h2 {
+  margin-bottom: 20px;
+  font-size: 1.5rem;
+}
+
+/* Google login button */
+.login-page #login-btn {
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 auto;
+}
+.login-page #login-btn::before {
+  content: url('https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg');
+}
+.login-page #login-btn:hover {
+  background: #f1f1f1;
+}
+
+/* ==========================
+   Animations
+   ========================== */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ==========================
+   Responsive Layouts
+   ========================== */
+@media (max-width: 768px) {
+  .login-page .login-container {
+    flex-direction: column;
+  }
+  .login-page .login-left {
+    flex: none;
+    height: 40vh;
+    text-align: center;
+    align-items: center;
+  }
+  .login-page .login-right {
+    flex: none;
+    height: 60vh;
+  }
+}

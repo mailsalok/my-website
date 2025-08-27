@@ -1,0 +1,20 @@
+[
+  {
+    "title": "Global Tech Conference 2025",
+    "description": "Highlights from the tech conference around the world.",
+    "url": "https://www.reuters.com/technology/",
+    "urlToImage": "https://www.reuters.com/resizer/xyz.jpg"
+  },
+  {
+    "title": "Stock Market Update",
+    "description": "Major indices up today due to positive earnings reports.",
+    "url": "https://www.reuters.com/markets/",
+    "urlToImage": "https://www.reuters.com/resizer/abc.jpg"
+  },
+  {
+    "title": "Space Exploration Advances",
+    "description": "New missions set to launch this year.",
+    "url": "https://www.reuters.com/science/",
+    "urlToImage": "https://www.reuters.com/resizer/123.jpg"
+  }
+]
