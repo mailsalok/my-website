@@ -20,7 +20,7 @@
     .news-img { width:100%; max-height:200px; object-fit:cover; border-radius:8px; margin-bottom:10px; }
     .news-link { display:inline-block; margin-top:10px; padding:8px 14px; background:#4f9dff; color:white; border-radius:8px; text-decoration:none; font-weight:bold; }
     .controls { margin-top:15px; }
-    .controls button { margin:0 10px; padding:8px 14px; border:none; border-radius:8px; background:#eee; cursor:pointer; font-weight:bold; }
+    .controls button { margin:0 5px; padding:8px 14px; border:none; border-radius:8px; background:#eee; cursor:pointer; font-weight:bold; }
     .controls button:hover { background:#ccc; }
     .loading { font-size:1rem; color:#666; margin-top:50px; }
   </style>
@@ -44,20 +44,23 @@
     <div class="controls">
       <button id="prev-btn">⬅ Prev</button>
       <button id="next-btn">Next ➡</button>
-      <button id="speak-btn">🔊 Speak News</button>
+      <button id="start-btn">▶ Start Reading</button>
+      <button id="stop-btn">⏹ Stop Reading</button>
     </div>
   </div>
 
   <script type="module" src="auth-guard.js"></script>
   <script>
-    const url = "/api/live-news"; // Vercel serverless function
+    const url = "/api/live-news"; // Your Vercel serverless function
+
     const container = document.getElementById("news-container");
-    const speakBtn = document.getElementById("speak-btn");
+    const startBtn = document.getElementById("start-btn");
+    const stopBtn = document.getElementById("stop-btn");
     let articles = [];
     let currentIndex = 0;
-    let autoRotate;
+    let autoRotate = false;
     let synth = window.speechSynthesis;
-    let currentUtter;
+    let utter;
 
     async function fetchNews() {
       container.innerHTML = `<p class="loading">Loading news...</p>`;
@@ -66,7 +69,7 @@
         if (!res.ok) throw new Error("Network error");
         articles = await res.json();
         if (!articles.length) container.innerHTML = "<p>No news available.</p>";
-        else { showArticle(0); startAutoRotate(); }
+        else showArticle(currentIndex);
       } catch (err) {
         console.error(err);
         container.innerHTML = `<p>⚠️ Failed to load news.</p>`;
@@ -89,73 +92,58 @@
         <a href="${article.url}" target="_blank" class="news-link">Read More</a>
       `;
 
-      card.addEventListener("mouseenter", () => clearInterval(autoRotate));
-      card.addEventListener("mouseleave", startAutoRotate);
-
       container.appendChild(card);
       setTimeout(() => card.classList.add("show"), 50);
     }
 
     function nextArticle() {
-      if(!articles.length) return;
-      stopNews();
+      if (!articles.length) return;
       currentIndex = (currentIndex + 1) % articles.length;
       showArticle(currentIndex);
-      autoSpeak();
+      if (autoRotate) readArticle();
     }
 
     function prevArticle() {
-      if(!articles.length) return;
-      stopNews();
+      if (!articles.length) return;
       currentIndex = (currentIndex - 1 + articles.length) % articles.length;
       showArticle(currentIndex);
-      autoSpeak();
+      if (autoRotate) readArticle();
     }
 
-    function startAutoRotate() { autoRotate=setInterval(nextArticle, 8000); }
-    function restartAutoRotate() { clearInterval(autoRotate); startAutoRotate(); }
+    function readArticle() {
+      if (!articles.length) return;
+      if (synth.speaking) synth.cancel();
 
-    function autoSpeak() {
-      if(!articles.length) return;
       const article = articles[currentIndex];
       const text = `${article.title || ""}. ${article.description || ""}`;
-      currentUtter = new SpeechSynthesisUtterance(text);
-      synth.speak(currentUtter);
-    }
+      utter = new SpeechSynthesisUtterance(text);
 
-    function stopNews() {
-      if(currentUtter) synth.cancel();
-    }
+      // Choose a thin female voice
+      const voices = synth.getVoices();
+      const femaleVoices = voices.filter(v => v.name.toLowerCase().includes('female') || v.name.toLowerCase().includes('woman'));
+      utter.voice = femaleVoices[0] || voices[0];
+      utter.pitch = 1.5; // higher pitch
+      utter.rate = 1; // normal speed
 
-    speakBtn.addEventListener("click", autoSpeak);
-
-    document.getElementById("next-btn").addEventListener("click", () => { nextArticle(); restartAutoRotate(); });
-    document.getElementById("prev-btn").addEventListener("click", () => { prevArticle(); restartAutoRotate(); });
-
-    // Voice Commands
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (SpeechRecognition) {
-      const recognition = new SpeechRecognition();
-      recognition.continuous = true;
-      recognition.lang = 'en-US';
-      recognition.interimResults = false;
-
-      recognition.onresult = (event) => {
-        const lastResult = event.results[event.results.length - 1][0].transcript.trim().toLowerCase();
-        console.log("Voice command:", lastResult);
-
-        if(lastResult.includes("next")) nextArticle();
-        else if(lastResult.includes("previous") || lastResult.includes("back")) prevArticle();
-        else if(lastResult.includes("pause")) stopNews();
-        else if(lastResult.includes("resume") || lastResult.includes("continue")) autoSpeak();
+      utter.onend = () => {
+        if (autoRotate) nextArticle(); // move to next article after finishing
       };
 
-      recognition.onerror = (event) => console.error("Speech recognition error:", event.error);
-      recognition.onend = () => recognition.start();
-      recognition.start();
-    } else {
-      console.warn("Voice commands not supported in this browser.");
+      synth.speak(utter);
     }
+
+    startBtn.addEventListener("click", () => {
+      autoRotate = true;
+      readArticle();
+    });
+
+    stopBtn.addEventListener("click", () => {
+      autoRotate = false;
+      if (synth.speaking) synth.cancel();
+    });
+
+    document.getElementById("next-btn").addEventListener("click", () => nextArticle());
+    document.getElementById("prev-btn").addEventListener("click", () => prevArticle());
 
     fetchNews();
   </script>
