@@ -1,16 +1,19 @@
-// live-news.js
+const url = "/api/live-news";
+
 const container = document.getElementById("news-container");
 const speakBtn = document.getElementById("speak-btn");
 const stopBtn = document.getElementById("stop-btn");
+
 let articles = [];
 let currentIndex = 0;
 let synth = window.speechSynthesis;
-let utter;
+let currentUtter = null;
 
+// Fetch news every 1 hour
 async function fetchNews() {
   container.innerHTML = `<p class="loading">Loading news...</p>`;
   try {
-    const res = await fetch("/api/live-news");
+    const res = await fetch(url);
     if (!res.ok) throw new Error("Network error");
     articles = await res.json();
     if (!articles.length) container.innerHTML = "<p>No news available.</p>";
@@ -26,8 +29,9 @@ function showArticle(index) {
   const article = articles[index];
   const card = document.createElement("div");
   card.className = "news-card";
+
   const image = article.urlToImage
-    ? `<img src="${article.urlToImage}" class="news-img">`
+    ? `<img src="${article.urlToImage}" alt="News Image" class="news-img">`
     : "";
   const description = article.description || "No description available.";
 
@@ -41,43 +45,45 @@ function showArticle(index) {
   container.appendChild(card);
 }
 
-function speakArticle() {
+function nextArticle() {
   if (!articles.length) return;
-  const article = articles[currentIndex];
-  const text = `${article.title}. ${article.description || ""}`;
-  utter = new SpeechSynthesisUtterance(text);
-  utter.lang = "en-IN"; // Indian English accent
-  utter.rate = 0.9;     // slightly slower
-  synth.speak(utter);
-
-  utter.onend = () => {
-    // auto-advance after finishing reading
-    currentIndex = (currentIndex + 1) % articles.length;
-    showArticle(currentIndex);
-    speakArticle();
-  };
+  currentIndex = (currentIndex + 1) % articles.length;
+  showArticle(currentIndex);
 }
 
+function prevArticle() {
+  if (!articles.length) return;
+  currentIndex = (currentIndex - 1 + articles.length) % articles.length;
+  showArticle(currentIndex);
+}
+
+function speakCurrent() {
+  if (!articles.length) return;
+  if (synth.speaking) synth.cancel();
+
+  const article = articles[currentIndex];
+  const text = `${article.title || ""}. ${article.description || ""}`;
+  currentUtter = new SpeechSynthesisUtterance(text);
+
+  // Thin female Indian voice with slower pace
+  currentUtter.lang = "en-IN";
+  currentUtter.rate = 0.9;
+  currentUtter.pitch = 1.1;
+
+  synth.speak(currentUtter);
+}
+
+// Stop speaking
 function stopSpeaking() {
   if (synth.speaking) synth.cancel();
 }
 
-document.getElementById("next-btn").addEventListener("click", () => {
-  stopSpeaking();
-  currentIndex = (currentIndex + 1) % articles.length;
-  showArticle(currentIndex);
-});
-document.getElementById("prev-btn").addEventListener("click", () => {
-  stopSpeaking();
-  currentIndex = (currentIndex - 1 + articles.length) % articles.length;
-  showArticle(currentIndex);
-});
-speakBtn.addEventListener("click", () => {
-  stopSpeaking();
-  speakArticle();
-});
-document.getElementById("stop-btn").addEventListener("click", stopSpeaking);
+// Event listeners
+document.getElementById("next-btn").addEventListener("click", nextArticle);
+document.getElementById("prev-btn").addEventListener("click", prevArticle);
+speakBtn.addEventListener("click", speakCurrent);
+stopBtn.addEventListener("click", stopSpeaking);
 
+// Initial fetch and auto-refresh every 1 hour
 fetchNews();
-// refresh news every 1 hour
-setInterval(fetchNews, 60 * 60 * 1000);
+setInterval(fetchNews, 1000 * 60 * 60);
