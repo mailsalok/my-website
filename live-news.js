@@ -1,11 +1,10 @@
+// File: live-news.js
 const container = document.getElementById("news-container");
 const speakBtn = document.getElementById("speak-btn");
-const stopBtn = document.getElementById("stop-btn");
 let articles = [];
 let currentIndex = 0;
 let synth = window.speechSynthesis;
-let utter;
-let autoNext;
+let isReading = false;
 
 // Fetch news from serverless function
 async function fetchNews() {
@@ -14,23 +13,27 @@ async function fetchNews() {
     const res = await fetch("/api/live-news");
     if (!res.ok) throw new Error("Network error");
     articles = await res.json();
-    if (!articles.length) container.innerHTML = "<p>No news available.</p>";
-    else showArticle(0);
+    if (!articles.length) {
+      container.innerHTML = "<p>No news available.</p>";
+    } else {
+      showArticle(0);
+    }
   } catch (err) {
     console.error(err);
-    container.innerHTML = `<p>⚠️ Failed to load news.</p>`;
+    container.innerHTML = "<p>⚠️ Failed to load news.</p>";
   }
 }
 
-// Show single article
+// Display one article
 function showArticle(index) {
   container.innerHTML = "";
+  currentIndex = index;
   const article = articles[index];
   const card = document.createElement("div");
   card.className = "news-card";
 
   const image = article.urlToImage
-    ? `<img src="${article.urlToImage}" class="news-img" />`
+    ? `<img src="${article.urlToImage}" alt="News Image" class="news-img">`
     : "";
   const description = article.description || "No description available.";
 
@@ -41,54 +44,57 @@ function showArticle(index) {
     <a href="${article.url}" target="_blank" class="news-link">Read More</a>
   `;
   container.appendChild(card);
-
-  // Read out the article automatically
-  speakArticle(article);
 }
 
-// Speak an article
-function speakArticle(article) {
-  stopSpeaking();
-  const text = `${article.title || ""}. ${article.description || ""}`;
-  utter = new SpeechSynthesisUtterance(text);
-  utter.lang = "en-IN"; // Indian English
-  utter.rate = 0.9;     // slightly slower
-  utter.voice = speechSynthesis.getVoices().find(v => v.name.includes("Google UK English Female") || v.name.includes("Indian")) || null;
-
-  utter.onend = () => {
-    // Move to next article automatically
-    currentIndex = (currentIndex + 1) % articles.length;
-    showArticle(currentIndex);
-  };
-
-  synth.speak(utter);
+// Navigation
+function nextArticle() {
+  if (!articles.length) return;
+  const nextIndex = (currentIndex + 1) % articles.length;
+  showArticle(nextIndex);
 }
 
-// Stop speaking
-function stopSpeaking() {
-  if (synth.speaking) synth.cancel();
+function prevArticle() {
+  if (!articles.length) return;
+  const prevIndex = (currentIndex - 1 + articles.length) % articles.length;
+  showArticle(prevIndex);
 }
 
-// Button handlers
+// Speak current article
 speakBtn.addEventListener("click", () => {
   if (!articles.length) return;
-  speakArticle(articles[currentIndex]);
-});
-document.getElementById("stop-btn").addEventListener("click", stopSpeaking);
 
-// Previous/Next buttons
-document.getElementById("next-btn").addEventListener("click", () => {
-  stopSpeaking();
-  currentIndex = (currentIndex + 1) % articles.length;
-  showArticle(currentIndex);
-});
-document.getElementById("prev-btn").addEventListener("click", () => {
-  stopSpeaking();
-  currentIndex = (currentIndex - 1 + articles.length) % articles.length;
-  showArticle(currentIndex);
+  if (isReading) {
+    synth.cancel();
+    isReading = false;
+    speakBtn.textContent = "🔊 Speak News";
+  } else {
+    const article = articles[currentIndex];
+    const text = `${article.title || ""}. ${article.description || ""}`;
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = "en-IN"; // Indian English
+    utter.rate = 0.9;     // Slightly slower
+    utter.voice =
+      speechSynthesis
+        .getVoices()
+        .find((v) => v.lang === "en-IN" && v.name.includes("Female")) || null;
+
+    utter.onend = () => {
+      isReading = false;
+      speakBtn.textContent = "🔊 Speak News";
+    };
+
+    synth.speak(utter);
+    isReading = true;
+    speakBtn.textContent = "⏹ Stop Reading";
+  }
 });
 
-// Auto-refresh news every 1 hour
-setInterval(fetchNews, 60 * 60 * 1000); // 1 hour
+// Auto-fetch new news every hour
+setInterval(fetchNews, 60 * 60 * 1000);
 
+// Button event listeners
+document.getElementById("next-btn").addEventListener("click", nextArticle);
+document.getElementById("prev-btn").addEventListener("click", prevArticle);
+
+// Initial fetch
 fetchNews();
