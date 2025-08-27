@@ -1,32 +1,22 @@
+// api/live-news.js
 import fetch from "node-fetch";
 
 export default async function handler(req, res) {
   try {
-    // List of countries and sources you want news from
-    const urls = [
-      `https://newsapi.org/v2/top-headlines?country=us&apiKey=${process.env.NEWS_API_KEY}`,
-      `https://newsapi.org/v2/top-headlines?country=in&apiKey=${process.env.NEWS_API_KEY}`,
-      `https://newsapi.org/v2/top-headlines?country=gb&apiKey=${process.env.NEWS_API_KEY}`,
-      `https://newsapi.org/v2/top-headlines?country=au&apiKey=${process.env.NEWS_API_KEY}`
-    ];
+    const apiKey = process.env.NEWS_API_KEY; // Set this in Vercel dashboard
+    const url = `https://newsapi.org/v2/top-headlines?language=en&pageSize=10&apiKey=${apiKey}`;
 
-    const allArticles = [];
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`NewsAPI error: ${response.status}`);
 
-    for (const url of urls) {
-      const response = await fetch(url);
-      if (!response.ok) throw new Error(`Failed to fetch news: ${response.status}`);
-      const data = await response.json();
-      if (data.articles && data.articles.length > 0) {
-        allArticles.push(...data.articles);
-      }
-    }
+    const data = await response.json();
 
-    // Optional: sort by published date descending
-    allArticles.sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt));
-
-    res.status(200).json(allArticles);
-  } catch (err) {
-    console.error("News API error:", err);
+    // Return only the articles array
+    res.setHeader("Content-Type", "application/json");
+    res.setHeader("Access-Control-Allow-Origin", "*"); // Allow front-end fetch
+    res.status(200).json(data.articles);
+  } catch (error) {
+    console.error("Error fetching news:", error.message);
     res.status(500).json({ error: "Failed to fetch news" });
   }
 }
