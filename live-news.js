@@ -1,16 +1,13 @@
 const container = document.getElementById("news-container");
-const startBtn = document.getElementById("start-btn");
+const speakBtn = document.getElementById("speak-btn");
 const stopBtn = document.getElementById("stop-btn");
-
 let articles = [];
 let currentIndex = 0;
-let autoRead = false;
 let synth = window.speechSynthesis;
 let utter;
+let autoNext;
 
-// Fetch news every 1 hour
-const FETCH_INTERVAL = 60 * 60 * 1000;
-
+// Fetch news from serverless function
 async function fetchNews() {
   container.innerHTML = `<p class="loading">Loading news...</p>`;
   try {
@@ -25,14 +22,16 @@ async function fetchNews() {
   }
 }
 
-// Display a single article
+// Show single article
 function showArticle(index) {
   container.innerHTML = "";
   const article = articles[index];
   const card = document.createElement("div");
   card.className = "news-card";
 
-  const image = article.urlToImage ? `<img src="${article.urlToImage}" alt="News Image" class="news-img">` : "";
+  const image = article.urlToImage
+    ? `<img src="${article.urlToImage}" class="news-img" />`
+    : "";
   const description = article.description || "No description available.";
 
   card.innerHTML = `
@@ -41,62 +40,55 @@ function showArticle(index) {
     <div class="news-description">${description}</div>
     <a href="${article.url}" target="_blank" class="news-link">Read More</a>
   `;
-
   container.appendChild(card);
-  setTimeout(() => card.classList.add("show"), 50);
+
+  // Read out the article automatically
+  speakArticle(article);
 }
 
-// Read the current article
-function readCurrentArticle() {
-  if (!articles.length || !autoRead) return;
-
-  const article = articles[currentIndex];
+// Speak an article
+function speakArticle(article) {
+  stopSpeaking();
   const text = `${article.title || ""}. ${article.description || ""}`;
-
-  // Stop previous utterance if any
-  if (utter) synth.cancel();
-
   utter = new SpeechSynthesisUtterance(text);
-  utter.lang = "en-IN"; // Female Indian accent
-  utter.rate = 0.85;    // Slower pace
-  utter.pitch = 1.1;    // Slightly higher pitch
+  utter.lang = "en-IN"; // Indian English
+  utter.rate = 0.9;     // slightly slower
+  utter.voice = speechSynthesis.getVoices().find(v => v.name.includes("Google UK English Female") || v.name.includes("Indian")) || null;
 
   utter.onend = () => {
-    // Move to next article only after reading is done
+    // Move to next article automatically
     currentIndex = (currentIndex + 1) % articles.length;
     showArticle(currentIndex);
-    if (autoRead) readCurrentArticle();
   };
 
   synth.speak(utter);
 }
 
-// Event listeners
+// Stop speaking
+function stopSpeaking() {
+  if (synth.speaking) synth.cancel();
+}
+
+// Button handlers
+speakBtn.addEventListener("click", () => {
+  if (!articles.length) return;
+  speakArticle(articles[currentIndex]);
+});
+document.getElementById("stop-btn").addEventListener("click", stopSpeaking);
+
+// Previous/Next buttons
 document.getElementById("next-btn").addEventListener("click", () => {
+  stopSpeaking();
   currentIndex = (currentIndex + 1) % articles.length;
   showArticle(currentIndex);
-  if (autoRead) readCurrentArticle();
 });
-
 document.getElementById("prev-btn").addEventListener("click", () => {
+  stopSpeaking();
   currentIndex = (currentIndex - 1 + articles.length) % articles.length;
   showArticle(currentIndex);
-  if (autoRead) readCurrentArticle();
 });
 
-startBtn.addEventListener("click", () => {
-  if (!articles.length) return;
-  autoRead = true;
-  readCurrentArticle();
-});
+// Auto-refresh news every 1 hour
+setInterval(fetchNews, 60 * 60 * 1000); // 1 hour
 
-stopBtn.addEventListener("click", () => {
-  autoRead = false;
-  if (utter) synth.cancel();
-});
-
-// Auto-fetch new news every 1 hour
-setInterval(fetchNews, FETCH_INTERVAL);
-
-// Initial fetch
 fetchNews();

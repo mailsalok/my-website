@@ -1,55 +1,40 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Live News - MyTutor</title>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=13">
-  <style>
-    body { font-family: 'Roboto', sans-serif; background:#f2f2f2; margin:0; padding:0; }
-    .navbar { display:flex; justify-content:space-between; align-items:center; padding:12px 20px; background:#4f9dff; color:white; }
-    .navbar h1 { margin:0; font-size:1.5rem; }
-    .nav-links a, .nav-links button { margin-left:10px; color:white; background:transparent; border:none; cursor:pointer; font-weight:bold; text-decoration:none; }
-    .section { padding:20px; text-align:center; }
-    .news-container { display:flex; flex-direction:column; align-items:center; margin-top:20px; min-height:200px; }
-    .news-card { background:#ffffffcc; backdrop-filter:blur(8px); border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.2); max-width:600px; width:90%; padding:20px; text-align:center; margin-bottom:15px; opacity:0; transform:translateY(10px); transition:all 0.5s ease-in-out; }
-    .news-card.show { opacity:1; transform:translateY(0); }
-    .news-title { font-size:1.3rem; font-weight:bold; margin-bottom:8px; }
-    .news-description { font-size:1rem; color:#444; margin-bottom:10px; }
-    .news-img { width:100%; max-height:200px; object-fit:cover; border-radius:8px; margin-bottom:10px; }
-    .news-link { display:inline-block; margin-top:10px; padding:8px 14px; background:#4f9dff; color:white; border-radius:8px; text-decoration:none; font-weight:bold; }
-    .controls { margin-top:15px; }
-    .controls button { margin:0 10px; padding:8px 14px; border:none; border-radius:8px; background:#eee; cursor:pointer; font-weight:bold; }
-    .controls button:hover { background:#ccc; }
-    .loading { font-size:1rem; color:#666; margin-top:50px; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Live News - MyTutor</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<style>
+/* Your existing styles here */
+</style>
 </head>
 <body>
-  <div class="navbar">
-    <h1>📡 Live News</h1>
-    <div class="nav-links">
-      <a href="news.html">⬅️ Back to News</a>
-      <span id="user-name"></span>
-      <button id="logout-btn">Logout</button>
-    </div>
+<div class="navbar">
+  <h1>📡 Live News</h1>
+  <div class="nav-links">
+    <a href="news.html">⬅️ Back to News</a>
+    <span id="user-name"></span>
+    <button id="logout-btn">Logout</button>
   </div>
+</div>
 
-  <div class="section">
-    <h2>Live News Feed</h2>
-    <p>Stay updated with the latest headlines around the world.</p>
-    <div class="news-container" id="news-container">
-      <p class="loading">Loading news...</p>
-    </div>
-    <div class="controls">
-      <button id="prev-btn">⬅ Prev</button>
-      <button id="next-btn">Next ➡</button>
-      <button id="start-btn">▶ Start Reading</button>
-      <button id="stop-btn">⏹ Stop Reading</button>
-    </div>
+<div class="section">
+  <h2>Live News Feed</h2>
+  <p>Stay updated with the latest headlines around the world.</p>
+  <div class="news-container" id="news-container">
+    <p class="loading">Loading news...</p>
   </div>
+  <div class="controls">
+    <button id="prev-btn">⬅ Prev</button>
+    <button id="next-btn">Next ➡</button>
+    <button id="speak-btn">🔊 Speak News</button>
+    <button id="stop-btn">⏹ Stop</button>
+  </div>
+</div>
 
-  <script type="module" src="auth-guard.js"></script>
-  <script src="live-news.js"></script>
+<script type="module" src="auth-guard.js"></script>
+<script type="module" src="live-news.js"></script>
 </body>
 </html>
