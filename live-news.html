@@ -20,7 +20,7 @@
     .news-img { width:100%; max-height:200px; object-fit:cover; border-radius:8px; margin-bottom:10px; }
     .news-link { display:inline-block; margin-top:10px; padding:8px 14px; background:#4f9dff; color:white; border-radius:8px; text-decoration:none; font-weight:bold; }
     .controls { margin-top:15px; }
-    .controls button { margin:0 5px; padding:8px 14px; border:none; border-radius:8px; background:#eee; cursor:pointer; font-weight:bold; }
+    .controls button { margin:0 10px; padding:8px 14px; border:none; border-radius:8px; background:#eee; cursor:pointer; font-weight:bold; }
     .controls button:hover { background:#ccc; }
     .loading { font-size:1rem; color:#666; margin-top:50px; }
   </style>
@@ -44,108 +44,11 @@
     <div class="controls">
       <button id="prev-btn">⬅ Prev</button>
       <button id="next-btn">Next ➡</button>
-      <button id="start-btn">▶ Start Reading</button>
-      <button id="stop-btn">⏹ Stop Reading</button>
+      <button id="speak-btn">🔊 Speak News</button>
     </div>
   </div>
 
   <script type="module" src="auth-guard.js"></script>
-  <script>
-    const url = "/api/live-news"; // Your Vercel serverless function
-
-    const container = document.getElementById("news-container");
-    const startBtn = document.getElementById("start-btn");
-    const stopBtn = document.getElementById("stop-btn");
-    let articles = [];
-    let currentIndex = 0;
-    let autoRotate = false;
-    let synth = window.speechSynthesis;
-    let utter;
-
-    async function fetchNews() {
-      container.innerHTML = `<p class="loading">Loading news...</p>`;
-      try {
-        const res = await fetch(url);
-        if (!res.ok) throw new Error("Network error");
-        articles = await res.json();
-        if (!articles.length) container.innerHTML = "<p>No news available.</p>";
-        else showArticle(currentIndex);
-      } catch (err) {
-        console.error(err);
-        container.innerHTML = `<p>⚠️ Failed to load news.</p>`;
-      }
-    }
-
-    function showArticle(index) {
-      container.innerHTML = "";
-      const article = articles[index];
-      const card = document.createElement("div");
-      card.className = "news-card";
-
-      const image = article.urlToImage ? `<img src="${article.urlToImage}" alt="News Image" class="news-img">` : "";
-      const description = article.description || "No description available.";
-
-      card.innerHTML = `
-        ${image}
-        <div class="news-title">${article.title || "Untitled"}</div>
-        <div class="news-description">${description}</div>
-        <a href="${article.url}" target="_blank" class="news-link">Read More</a>
-      `;
-
-      container.appendChild(card);
-      setTimeout(() => card.classList.add("show"), 50);
-    }
-
-    function nextArticle() {
-      if (!articles.length) return;
-      currentIndex = (currentIndex + 1) % articles.length;
-      showArticle(currentIndex);
-      if (autoRotate) readArticle();
-    }
-
-    function prevArticle() {
-      if (!articles.length) return;
-      currentIndex = (currentIndex - 1 + articles.length) % articles.length;
-      showArticle(currentIndex);
-      if (autoRotate) readArticle();
-    }
-
-    function readArticle() {
-      if (!articles.length) return;
-      if (synth.speaking) synth.cancel();
-
-      const article = articles[currentIndex];
-      const text = `${article.title || ""}. ${article.description || ""}`;
-      utter = new SpeechSynthesisUtterance(text);
-
-      // Choose a thin female voice
-      const voices = synth.getVoices();
-      const femaleVoices = voices.filter(v => v.name.toLowerCase().includes('female') || v.name.toLowerCase().includes('woman'));
-      utter.voice = femaleVoices[0] || voices[0];
-      utter.pitch = 1.5; // higher pitch
-      utter.rate = 1; // normal speed
-
-      utter.onend = () => {
-        if (autoRotate) nextArticle(); // move to next article after finishing
-      };
-
-      synth.speak(utter);
-    }
-
-    startBtn.addEventListener("click", () => {
-      autoRotate = true;
-      readArticle();
-    });
-
-    stopBtn.addEventListener("click", () => {
-      autoRotate = false;
-      if (synth.speaking) synth.cancel();
-    });
-
-    document.getElementById("next-btn").addEventListener("click", () => nextArticle());
-    document.getElementById("prev-btn").addEventListener("click", () => prevArticle());
-
-    fetchNews();
-  </script>
+  <script type="module" src="live-news.js"></script>
 </body>
 </html>
