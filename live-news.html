@@ -6,7 +6,6 @@
   <title>Live News - MyTutor</title>
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css?v=13">
-
   <style>
     body { font-family: 'Roboto', sans-serif; background:#f2f2f2; margin:0; padding:0; }
     .navbar { display:flex; justify-content:space-between; align-items:center; padding:12px 20px; background:#4f9dff; color:white; }
@@ -45,17 +44,20 @@
     <div class="controls">
       <button id="prev-btn">⬅ Prev</button>
       <button id="next-btn">Next ➡</button>
+      <button id="speak-btn">🔊 Speak News</button>
     </div>
   </div>
 
   <script type="module" src="auth-guard.js"></script>
   <script>
-    const url = "news.json"; // Static local JSON file
-
+    const url = "/api/live-news"; // Vercel serverless function
     const container = document.getElementById("news-container");
+    const speakBtn = document.getElementById("speak-btn");
     let articles = [];
     let currentIndex = 0;
     let autoRotate;
+    let synth = window.speechSynthesis;
+    let currentUtter;
 
     async function fetchNews() {
       container.innerHTML = `<p class="loading">Loading news...</p>`;
@@ -63,7 +65,7 @@
         const res = await fetch(url);
         if (!res.ok) throw new Error("Network error");
         articles = await res.json();
-        if (articles.length === 0) container.innerHTML = "<p>No news available.</p>";
+        if (!articles.length) container.innerHTML = "<p>No news available.</p>";
         else { showArticle(0); startAutoRotate(); }
       } catch (err) {
         console.error(err);
@@ -94,13 +96,66 @@
       setTimeout(() => card.classList.add("show"), 50);
     }
 
-    function nextArticle() { if(!articles.length) return; currentIndex=(currentIndex+1)%articles.length; showArticle(currentIndex); }
-    function prevArticle() { if(!articles.length) return; currentIndex=(currentIndex-1+articles.length)%articles.length; showArticle(currentIndex); }
-    function startAutoRotate() { autoRotate=setInterval(nextArticle,5000); }
+    function nextArticle() {
+      if(!articles.length) return;
+      stopNews();
+      currentIndex = (currentIndex + 1) % articles.length;
+      showArticle(currentIndex);
+      autoSpeak();
+    }
+
+    function prevArticle() {
+      if(!articles.length) return;
+      stopNews();
+      currentIndex = (currentIndex - 1 + articles.length) % articles.length;
+      showArticle(currentIndex);
+      autoSpeak();
+    }
+
+    function startAutoRotate() { autoRotate=setInterval(nextArticle, 8000); }
     function restartAutoRotate() { clearInterval(autoRotate); startAutoRotate(); }
+
+    function autoSpeak() {
+      if(!articles.length) return;
+      const article = articles[currentIndex];
+      const text = `${article.title || ""}. ${article.description || ""}`;
+      currentUtter = new SpeechSynthesisUtterance(text);
+      synth.speak(currentUtter);
+    }
+
+    function stopNews() {
+      if(currentUtter) synth.cancel();
+    }
+
+    speakBtn.addEventListener("click", autoSpeak);
 
     document.getElementById("next-btn").addEventListener("click", () => { nextArticle(); restartAutoRotate(); });
     document.getElementById("prev-btn").addEventListener("click", () => { prevArticle(); restartAutoRotate(); });
+
+    // Voice Commands
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.lang = 'en-US';
+      recognition.interimResults = false;
+
+      recognition.onresult = (event) => {
+        const lastResult = event.results[event.results.length - 1][0].transcript.trim().toLowerCase();
+        console.log("Voice command:", lastResult);
+
+        if(lastResult.includes("next")) nextArticle();
+        else if(lastResult.includes("previous") || lastResult.includes("back")) prevArticle();
+        else if(lastResult.includes("pause")) stopNews();
+        else if(lastResult.includes("resume") || lastResult.includes("continue")) autoSpeak();
+      };
+
+      recognition.onerror = (event) => console.error("Speech recognition error:", event.error);
+      recognition.onend = () => recognition.start();
+      recognition.start();
+    } else {
+      console.warn("Voice commands not supported in this browser.");
+    }
 
     fetchNews();
   </script>
