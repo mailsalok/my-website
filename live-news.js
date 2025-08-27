@@ -1,33 +1,31 @@
-// live-news.js
-
 const container = document.getElementById("news-container");
-const speakBtn = document.getElementById("speak-btn");
-const nextBtn = document.getElementById("next-btn");
-const prevBtn = document.getElementById("prev-btn");
-const url = "/api/live-news"; // serverless function
+const startBtn = document.getElementById("start-btn");
+const stopBtn = document.getElementById("stop-btn");
 
 let articles = [];
 let currentIndex = 0;
+let autoRead = false;
 let synth = window.speechSynthesis;
-let isReading = false;
-let autoFetchInterval;
+let utter;
 
-// Fetch news from serverless function
+// Fetch news every 1 hour
+const FETCH_INTERVAL = 60 * 60 * 1000;
+
 async function fetchNews() {
   container.innerHTML = `<p class="loading">Loading news...</p>`;
   try {
-    const res = await fetch(url);
+    const res = await fetch("/api/live-news");
     if (!res.ok) throw new Error("Network error");
     articles = await res.json();
     if (!articles.length) container.innerHTML = "<p>No news available.</p>";
-    else showArticle(currentIndex);
+    else showArticle(0);
   } catch (err) {
     console.error(err);
     container.innerHTML = `<p>⚠️ Failed to load news.</p>`;
   }
 }
 
-// Show article on page
+// Display a single article
 function showArticle(index) {
   container.innerHTML = "";
   const article = articles[index];
@@ -48,62 +46,57 @@ function showArticle(index) {
   setTimeout(() => card.classList.add("show"), 50);
 }
 
-// Speak the current article
-function speakArticle() {
-  if (!articles.length || isReading) return;
-  isReading = true;
+// Read the current article
+function readCurrentArticle() {
+  if (!articles.length || !autoRead) return;
 
   const article = articles[currentIndex];
   const text = `${article.title || ""}. ${article.description || ""}`;
-  const utter = new SpeechSynthesisUtterance(text);
 
-  // Female Indian accent
-  utter.lang = "en-IN";
-  utter.pitch = 1.2;
-  utter.rate = 0.9;
+  // Stop previous utterance if any
+  if (utter) synth.cancel();
+
+  utter = new SpeechSynthesisUtterance(text);
+  utter.lang = "en-IN"; // Female Indian accent
+  utter.rate = 0.85;    // Slower pace
+  utter.pitch = 1.1;    // Slightly higher pitch
 
   utter.onend = () => {
-    isReading = false;
-    nextArticle(); // Automatically go to next after reading
+    // Move to next article only after reading is done
+    currentIndex = (currentIndex + 1) % articles.length;
+    showArticle(currentIndex);
+    if (autoRead) readCurrentArticle();
   };
 
   synth.speak(utter);
 }
 
-// Stop reading
-function stopReading() {
-  if (synth.speaking) synth.cancel();
-  isReading = false;
-}
-
-// Next / Prev article
-function nextArticle() {
-  stopReading();
-  if (!articles.length) return;
+// Event listeners
+document.getElementById("next-btn").addEventListener("click", () => {
   currentIndex = (currentIndex + 1) % articles.length;
   showArticle(currentIndex);
-  speakArticle();
-}
-
-function prevArticle() {
-  stopReading();
-  if (!articles.length) return;
-  currentIndex = (currentIndex - 1 + articles.length) % articles.length;
-  showArticle(currentIndex);
-  speakArticle();
-}
-
-// Event listeners
-speakBtn.addEventListener("click", () => {
-  if (isReading) stopReading();
-  else speakArticle();
+  if (autoRead) readCurrentArticle();
 });
 
-nextBtn.addEventListener("click", nextArticle);
-prevBtn.addEventListener("click", prevArticle);
+document.getElementById("prev-btn").addEventListener("click", () => {
+  currentIndex = (currentIndex - 1 + articles.length) % articles.length;
+  showArticle(currentIndex);
+  if (autoRead) readCurrentArticle();
+});
 
-// Auto-fetch news every 1 hour
-autoFetchInterval = setInterval(fetchNews, 60 * 60 * 1000); // 1 hour
+startBtn.addEventListener("click", () => {
+  if (!articles.length) return;
+  autoRead = true;
+  readCurrentArticle();
+});
+
+stopBtn.addEventListener("click", () => {
+  autoRead = false;
+  if (utter) synth.cancel();
+});
+
+// Auto-fetch new news every 1 hour
+setInterval(fetchNews, FETCH_INTERVAL);
 
 // Initial fetch
 fetchNews();
